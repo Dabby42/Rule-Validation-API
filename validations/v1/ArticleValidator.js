@@ -1,5 +1,6 @@
+import autoBind from 'auto-bind';
 import Helpers from '../../helpers/helper';
-const isBase64 = require('is-base64');
+
 /**
  * Defines methods for validating Article functions
  *
@@ -8,6 +9,7 @@ const isBase64 = require('is-base64');
 class ArticleValidator extends Helpers {
   constructor() {
     super();
+    autoBind(this);
   }
   /**
    * validates Registration data
@@ -15,70 +17,46 @@ class ArticleValidator extends Helpers {
    * @param {object} res
    * @param {callback} next
    */
+
   validateArticle(req, res, next) {
-    const { image } = req.body;
+    try {
 
-    req.check('contents', 'content field is required').notEmpty().trim();
+      const {data, rule} = req.body;  
 
-    req.check('subject', 'subject field is required').notEmpty().trim();
+      const screenedField = super.requiredField(res, rule, data)
+      
+      const output = super.ruleType(res, screenedField);
 
-    req.check('category', 'category field is required').notEmpty().trim();
-
-    req.check('image', 'image must be a base64 string or url').custom(() => {
-      let isValid = false;
-      if (super.isValidUrl(image)) {
-        isValid = true;
+      const field = output.rule['field'];
+      let firstKey = (/\./).test(field)? field.slice(0, (field.indexOf('.'))): field;
+      let secondKey = (/\./).test(field)? field.slice(field.indexOf('.') + 1): null ;
+      
+      if (output.data.hasOwnProperty(firstKey) === false ) {
+        return super.validationFailed(res, null, `field ${field} is missing from data.`)
       }
-      if (image && isBase64(image, { mime: true })) {
-        isValid = true;
+
+      if (secondKey && output.data[firstKey].hasOwnProperty(secondKey)) {
+        const result = super.conditionLogic(output.data[firstKey][secondKey], rule, firstKey);
+        
+        // const resultsObj = {result, firstKey, secondKey};
+        req.body.results = {result, firstKey, secondKey}
+        
+        return next()
+        
       }
 
-      return isValid;
-    });
-
-    const errors = req.validationErrors();
-
-    if (errors) {
-      return super.validationFailed(res, super.extractErrors(errors));
+      let nresult = super.conditionLogic(output.data[firstKey], rule, firstKey);
+      
+      req.body.results = {nresult, firstKey, secondKey}
+      
+      return next();
+      
+    } catch (error) {
+      return super.validationFailed(res, null, `Invalid JSON payload passed.`)
     }
-    return next();
+    
+  
   }
-
-  /**
-   * validates Comment data
-   * @param {object} req
-   * @param {object} res
-   * @param {callback} next
-   */
-  validateComment(req, res, next) {
-    req.check('article', 'Article id field is required').notEmpty().trim();
-
-    req.check('comment', 'Comment field is required').notEmpty().trim();
-
-    const errors = req.validationErrors();
-
-    if (errors) {
-      return super.validationFailed(res, super.extractErrors(errors));
-    }
-    return next();
-  }
-
-  /**
-   * validates Registration data
-   * @param {object} req
-   * @param {object} res
-   * @param {callback} next
-   */
-  validateHasId(req, res, next) {
-    req.body.id = req.params.id;
-    req.check('id', 'id field is required').notEmpty().trim();
-
-    const errors = req.validationErrors();
-
-    if (errors) {
-      return super.validationFailed(res, super.extractErrors(errors));
-    }
-    return next();
-  }
+  
 }
 module.exports = ArticleValidator;

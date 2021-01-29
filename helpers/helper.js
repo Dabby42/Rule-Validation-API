@@ -1,261 +1,108 @@
 /* istanbul ignore file */
 const constants = require('../config/constants');
-import dotenv from 'dotenv';
-dotenv.config();
+
 const {
-  FAILED,
+  ERROR,
   SUCCESS,
-  HTTP_UNPROCESSABLE_ENTITY,
-  HTTP_NOT_FOUND,
   HTTP_BAD_REQUEST,
-  HTTP_CONFLICT,
-  HTTP_FORBIDDEN,
   HTTP_OK,
-  HTTP_UNAUTHORIZED,
 } = constants;
 
 class Helpers {
   /**
    *
-   * @param {object} errors
-   * processes the errors returned by the validator and puts it in required format
-   */
-  extractErrors(errors) {
-    const validationErrors = {};
-    errors.map((error) => {
-      if (validationErrors.hasOwnProperty(error.param)) {
-        validationErrors[error.param].push(error.msg);
-      } else {
-        validationErrors[error.param] = [error.msg];
-      }
-      return validationErrors;
-    });
-    return validationErrors;
-  }
-
-  /**
-   *
-   * @param {var} num
-   * Checks if value is an integer
-   */
-  isANumber(num) {
-    return Number.isInteger(Number(num));
-  }
-
-  /**
-   *
    * @param {object} res
-   * @param {object} errors
+   * @param {string} message
+   * Formats response for successful action that requires data to be returned
+   */
+  validationSuccess(res, data, message = 'successful') {
+    let response = {
+      message,
+      status: SUCCESS,
+      data,
+    };
+    return res.status(HTTP_OK).send(response);
+  }
+
+    /**
+   * 
+   * @param {object} res 
+   * @param {object} errors 
    * formats response caused due to form validation
    */
-  validationFailed(res, errors) {
-    let response = {
-      status: FAILED,
-      errors,
-      status_code: HTTP_UNPROCESSABLE_ENTITY,
-      message: 'unprocessable entity',
-    };
-    return res.status(HTTP_UNPROCESSABLE_ENTITY).send(response);
-  }
+  validationFailed(res, data, message = 'unprocessable entity'){
 
-  /**
-   *
-   * @param {object} res
-   * @param {string} message
-   * Formats response for not found
-   */
-  notFound(res, message) {
     let response = {
-      status: FAILED,
-      status_code: HTTP_NOT_FOUND,
       message,
-    };
-    return res.status(HTTP_NOT_FOUND).send(response);
-  }
-
-  /**
-   *
-   * @param {object} res
-   * @param {string} message
-   * Formats response for unauthorized requests
-   */
-  expiredToken(res, message) {
-    let response = {
-      status: FAILED,
-      status_code: HTTP_UNAUTHORIZED,
-      message,
-      expiredToken: true,
-    };
-    return res.status(HTTP_UNAUTHORIZED).send(response);
-  }
-
-  /**
-   *
-   * @param {object} res
-   * @param {string} message
-   * Formats response for unauthorized requests
-   */
-  unauthorized(res, message) {
-    let response = {
-      status: FAILED,
-      status_code: HTTP_UNAUTHORIZED,
-      message,
-    };
-    return res.status(HTTP_UNAUTHORIZED).send(response);
-  }
-
-  /**
-   *
-   * @param {object} res
-   * @param {string} message
-   * Formats response for bad requests
-   */
-  badRequest(res, message) {
-    let response = {
-      status: FAILED,
-      status_code: HTTP_BAD_REQUEST,
-      message,
-    };
+      status: ERROR,
+      data,   
+    }
     return res.status(HTTP_BAD_REQUEST).send(response);
   }
 
-  /**
-   *
-   * @param {object} res
-   * @param {string} message
-   * Formats response for successful action that doesn't require data to be sent back
-   */
-  actionSuccess(res, message) {
-    let response = {
-      status: SUCCESS,
-      status_code: HTTP_OK,
-      message,
-    };
-    return res.status(HTTP_OK).send(response);
-  }
-
-  /**
-   *
-   * @param {object} res
-   * @param {string} message
-   * Formats response for failed action that doesn't require data to be sent back
-   */
-  actionFailure(res, message) {
-    let response = {
-      status: FAILED,
-      status_code: HTTP_CONFLICT,
-      message,
-    };
-    return res.status(HTTP_CONFLICT).send(response);
-  }
-
-  /**
-   *
-   * @param {object} res
-   * @param {string} message
-   * Formats response for forbidden action
-   */
-  forbidden(res, message) {
-    let response = {
-      status: FAILED,
-      status_code: HTTP_FORBIDDEN,
-      message,
-    };
-    return res.status(HTTP_FORBIDDEN).send(response);
-  }
-
-  /**
-   * @param {var} s
-   */
-  isValidUrl(s) {
-    var regexp = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
-    return regexp.test(s);
-  }
-
-  /**
-   *
-   * @param {object} res
-   * @param {string} message
-   * Formats response for successful action that requires data to be returned
-   */
-  success(res, data, message = 'successful') {
-    let response = {
-      data,
-      status: SUCCESS,
-      status_code: HTTP_OK,
-      message,
-    };
-    return res.status(HTTP_OK).send(response);
-  }
-
-  /**
-   *
-   * @param {object} res
-   * @param {string} message
-   * Formats response for successful action that requires data to be returned
-   */
-  successPaginated(res, data, meta = {}, message = 'successful') {
-    let response = {
-      data,
-      status: SUCCESS,
-      status_code: HTTP_OK,
-      meta,
-      message,
-    };
-    return res.status(HTTP_OK).send(response);
-  }
-
-  getPaginationOptions(req) {
-    let page = parseInt(req.query.page, 10) || 1;
-    let limit = parseInt(req.query.limit, 10) || 10;
-    let skipper = page > 0 ? (page - 1) * limit : page * limit;
-    return {
-      page,
-      limit,
-      skipper,
-    };
-  }
-
-  getMeta(pageOptions, total) {
-    return {
-      totalPages:
-        total % pageOptions.limit == 0
-          ? parseInt(total / pageOptions.limit)
-          : parseInt(total / pageOptions.limit) + 1,
-      limit: pageOptions.limit,
-      page: pageOptions.page,
-    };
-  }
-
-  /**
-   * Generates random n digit invite code that is unique to a user
-   * @param {int} length
-   */
-  async randomString(length = 10) {
-    let alpha = 'ABCDEFGHIJKLMNOPQRSTUPWXYZ0123456789abcdefghijklmnopqrstuvwxyz'.split(
-      ''
-    );
-    let code = '';
-    for (let i = 0; i < length; i++) {
-      // code += this.getRandomInt(alpha.length - 1);
-      code += alpha[Math.floor(Math.random() * Math.floor(alpha.length - 1))];
+  requiredField(res, rule, data){
+    if (rule == undefined) {
+      return super.validationFailed(res, null, 'rule is required.');
     }
-    return code;
+
+    if (data === undefined) {
+      return super.validationFailed(res, null, 'data is required.')
+    }
+    const field = {rule, data}
+    return field;
   }
 
-  async getReference() {
-    let reference = this.randomString();
-    try {
-      let exists = await Transaction.findOne({ reference });
-      if (exists) {
-        this.getReference();
-      } else {
-        return reference;
-      }
-    } catch (err) {
-      return reference;
+  conditionLogic(key, rule, field1){
+    switch (rule.condition) {
+      case 'eq':
+        return (key === rule.condition_value);
+      
+      case 'neq':
+        return (key !== rule.condition_value);
+
+      case 'gt':
+        return (key > rule.condition_value);
+
+      case 'gte':
+        return (key > rule.condition_value) || (key === rule.condition_value);
+
+      case 'contains':
+        return (data[field1].hasOwnProperty(rule.condition_value)|| data[field1] === [rule.condition_value]);
+  
+      default:
+        return null;
     }
   }
+
+  ruleType(res, entry){
+    const {data, rule} = entry
+
+    const ruleType = typeof rule;
+    const dataType = typeof data;
+
+    if (ruleType !== "object") {
+      return super.validationFailed(res, null, 'rule should be an object.')
+    } 
+    
+    if ((dataType !== "string") && (dataType !== "object")) {
+      return super.validationFailed(res, null, 'data should be an object, array or a string.')
+    } 
+
+    return entry;
+
+  }
+
+  // checkJSON(data){
+
+  //   try {
+  //     JSON.parse(data);
+
+  //   } catch (error) {
+  //     return false;
+  //   }
+  // }
+
+
 }
 
 module.exports = Helpers;
