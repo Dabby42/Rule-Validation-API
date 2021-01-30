@@ -24,10 +24,10 @@ class Helpers {
     return res.status(HTTP_OK).send(response);
   }
 
-    /**
+  /**
    * 
    * @param {object} res 
-   * @param {object} errors 
+   * @param {string} message 
    * formats response caused due to form validation
    */
   validationFailed(res, data, message = 'unprocessable entity'){
@@ -40,18 +40,43 @@ class Helpers {
     return res.status(HTTP_BAD_REQUEST).send(response);
   }
 
-  requiredField(res, rule, data){
-    if (rule == undefined) {
-      return super.validationFailed(res, null, 'rule is required.');
+  /**
+   * 
+   * @param {object} res 
+   * @param {object} meq 
+   * Checks for required field
+   */
+
+  requiredField(res, req){
+
+    let response = {
+      message: 'unprocessable entity',
+      status: ERROR,
+      data: null,   
     }
 
-    if (data === undefined) {
-      return super.validationFailed(res, null, 'data is required.')
+    if (req.body.hasOwnProperty('rule') === false) {
+      response.message = 'rule is required.';
+
+      return res.status(HTTP_BAD_REQUEST).send(response);
     }
-    const field = {rule, data}
-    return field;
+
+    if (req.body.hasOwnProperty('data') === false) {
+      response.message = 'data is required.';
+
+      return res.status(HTTP_BAD_REQUEST).send(response);
+    }
+    return req.body
   }
 
+
+  /**
+   * 
+   * @param {string} key
+   * @param {object} rule
+   * @param {object} field1
+   * formats response based on condition Logic
+   */
   conditionLogic(key, rule, field1){
     switch (rule.condition) {
       case 'eq':
@@ -74,35 +99,42 @@ class Helpers {
     }
   }
 
+  /**
+   * 
+   * @param {object} res
+   * @param {object} entry
+   * formats response based on type value
+   */
   ruleType(res, entry){
     const {data, rule} = entry
 
     const ruleType = typeof rule;
     const dataType = typeof data;
+    
+    let response = {
+      message: 'unprocessable entity',
+      status: ERROR,
+      data: null,   
+    }
 
-    if (ruleType !== "object") {
-      return super.validationFailed(res, null, 'rule should be an object.')
-    } 
+    // console.log((ruleType) !== 'object' && Array.isArray(rule) === true);
+    
+    if ((ruleType) !== 'object' || Array.isArray(rule) === true) {
+
+      response.message = 'rule should be an object.';
+
+      return res.status(HTTP_BAD_REQUEST).send(response);
+    }
     
     if ((dataType !== "string") && (dataType !== "object")) {
-      return super.validationFailed(res, null, 'data should be an object, array or a string.')
+      response.message = 'data should be an object.';
+
+      return res.status(HTTP_BAD_REQUEST).send(response);
     } 
 
     return entry;
 
   }
-
-  // checkJSON(data){
-
-  //   try {
-  //     JSON.parse(data);
-
-  //   } catch (error) {
-  //     return false;
-  //   }
-  // }
-
-
 }
 
 module.exports = Helpers;

@@ -3,7 +3,7 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import ArticleRoute from './routes/v1/ArticleRoute';
+import ValidateRoute from './routes/v1/ValidateRoute';
 
 let cors = require('cors');
 const app = express();
@@ -14,11 +14,25 @@ dotenv.config()
 //=========================================================
 //All Middlewares here
 //=========================================================
-// Tell the bodyparser middleware to accept more data
-app.use(bodyParser.json({ limit: '400mb' }));
-app.use(bodyParser.urlencoded({ limit: '400mb', extended: true }));
-// Article Route
-app.use(ArticleRoute);
+app.use((req, res, next) => {
+  bodyParser.json()(req, res, err => {
+      if (err) {
+        console.error(err);
+        return res.status(400).send({
+          message: "Invalid JSON payload passed.",
+          status: "error",
+          data: null
+        }); 
+      }
+
+      next();
+  });
+});
+
+app.use(bodyParser.urlencoded({ limit: '400mb', extended: true })); 
+ 
+// Validate Route
+app.use(ValidateRoute);
 
 //default landing:
 app.all('*', (req, res) => {
