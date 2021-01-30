@@ -12,7 +12,7 @@ class ArticleController extends BaseController {
    * @apiName Get Developer's details
    * @apiGroup Rule-Validation
    */
-  getMe(res){
+  getMe(req,res){
     const data = {};
     data.name = "Nwafor Daberechukwu Miracle";
     data.github = "@Dabby42";
